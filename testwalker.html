@@ -31,6 +31,7 @@
         <p class="file-name" id="nameProc"></p>
         <input type="file" accept=".json,application/json" class="hidden" id="fileProc">
         <textarea id="pasteProc" data-i18n-ph="loader.pasteHint"></textarea>
+        <div class="drop-actions"><button class="ghost btn-clear" id="btnClearProc" data-i18n="loader.clear"></button></div>
       </div>
       <div class="drop" id="dropData" data-kind="data">
         <h3><span data-i18n="loader.data.title"></span> <span class="opt" data-i18n="loader.optional"></span></h3>
@@ -38,6 +39,7 @@
         <p class="file-name" id="nameData"></p>
         <input type="file" accept=".json,application/json" class="hidden" id="fileData">
         <textarea id="pasteData" data-i18n-ph="loader.pasteHint"></textarea>
+        <div class="drop-actions"><button class="ghost btn-clear" id="btnClearData" data-i18n="loader.clear"></button></div>
       </div>
     </div>
     <div class="loader-actions">
@@ -49,9 +51,15 @@
     <details class="sample">
       <summary data-i18n="loader.sampleSummary"></summary>
       <p style="margin-top:10px"><b data-i18n="loader.sampleProcDesc"></b></p>
-      <pre id="sampleProc"></pre>
+      <div class="code-block">
+        <button class="ghost copy-btn" id="btnCopyProc" data-copy-target="sampleProc" data-i18n="loader.copy"></button>
+        <pre id="sampleProc"></pre>
+      </div>
       <p><b data-i18n="loader.sampleDataDesc"></b></p>
-      <pre id="sampleData"></pre>
+      <div class="code-block">
+        <button class="ghost copy-btn" id="btnCopyData" data-copy-target="sampleData" data-i18n="loader.copy"></button>
+        <pre id="sampleData"></pre>
+      </div>
       <button id="btnLoadSample" class="ghost" data-i18n="loader.loadSample"></button>
     </details>
   </section>

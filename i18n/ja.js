@@ -28,6 +28,11 @@ TW_I18N.register("ja", {
   "loader.loadSample": "↑ このサンプルを読み込む",
   "loader.pasted": "(貼り付け)",
   "loader.sample": "(サンプル)",
+  "loader.clear": "クリア",
+  "loader.copy": "コピー",
+
+  "copy.copied": "✓ コピーしました",
+  "copy.clickToCopy": "クリックでコピー",
 
   "err.noProc": "テスト手順JSONを読み込んでください。",
   "err.procParse": "手順JSONの解析に失敗しました: {msg}",
@@ -54,6 +59,7 @@ TW_I18N.register("ja", {
   "case.dataDefault": "データ#{n}",
   "case.precondition": "前提条件：",
   "case.noSteps": "手順ステップの定義はありません。",
+  "case.testData": "テストデータ",
 
   "step.no": "#",
   "step.action": "操作手順",
