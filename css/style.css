@@ -94,7 +94,43 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   border: 1px solid var(--border); border-radius: 6px; padding: 8px;
   font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px;
 }
+.drop-actions { margin-top: 8px; text-align: right; }
+.btn-clear { padding: 4px 12px; font-size: 12px; }
 .loader-actions { margin-top: 18px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+/* code sample with copy button */
+.code-block { position: relative; }
+.code-block .copy-btn {
+  position: absolute; top: 8px; right: 8px; z-index: 1;
+  padding: 4px 12px; font-size: 12px;
+  background: rgba(255,255,255,.92); border-color: var(--border);
+}
+.code-block pre { margin: 6px 0; }
+
+/* lightweight toast for copy feedback */
+.toast {
+  position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 12px);
+  background: #1f2933; color: #fff; padding: 8px 18px; border-radius: 999px;
+  font-size: 13px; box-shadow: 0 4px 14px rgba(0,0,0,.25);
+  opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s; z-index: 50;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* click-to-copy elements */
+.copyable { cursor: copy; }
+.ph.copyable:hover { outline: 1px solid var(--accent); outline-offset: 1px; }
+
+/* test data chips in a case card */
+.testdata { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 10px 0; }
+.testdata .td-label { font-size: 11px; color: var(--muted); font-weight: 600; margin-right: 2px; }
+.td-chip {
+  font: inherit; font-size: 12px; cursor: copy;
+  border: 1px solid var(--border); background: #f8fafc; color: var(--text);
+  padding: 3px 10px; border-radius: 6px;
+}
+.td-chip:hover { background: var(--accent-weak); border-color: var(--accent); }
+.td-chip .k { color: var(--muted); }
+.td-chip .v { font-weight: 600; }
 .hint { color: var(--muted); font-size: 12px; }
 .error-box {
   background: #fef2f2; border: 1px solid #fecaca; color: var(--fail);

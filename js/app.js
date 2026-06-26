@@ -51,6 +51,50 @@
   const $$ = (sel, ctx) => Array.from((ctx || document).querySelectorAll(sel));
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
 
+  // ---------- Clipboard (works under file:// via execCommand fallback) ----------
+  let toastEl = null, toastTimer = null;
+  function showToast(msg) {
+    if (!toastEl) {
+      toastEl = document.createElement("div");
+      toastEl.className = "toast";
+      document.body.appendChild(toastEl);
+    }
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove("show"), 1200);
+  }
+  function legacyCopy(text) {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.top = "-1000px";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+  function copyToClipboard(text) {
+    if (text == null) return;
+    const done = () => showToast(t("copy.copied"));
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(done).catch(() => { if (legacyCopy(text)) done(); });
+    } else {
+      if (legacyCopy(text)) done();
+    }
+  }
+
+  // ---------- Clear a loader input panel ----------
+  function clearInput(kind) {
+    if (kind === "proc") { procText = ""; procSource = ""; $("#pasteProc").value = ""; $("#fileProc").value = ""; }
+    else { dataText = ""; dataSource = ""; $("#pasteData").value = ""; $("#fileData").value = ""; }
+    refreshFileNames();
+    clearError();
+  }
+
   // ---------- Language selector ----------
   function buildLangSelector() {
     const sel = $("#langSel");
@@ -210,11 +254,15 @@
   }
 
   // ---------- Placeholder substitution ----------
-  function subst(text, ds) {
+  function subst(text, ds, interactive) {
     if (!ds) return esc(text);
     return esc(text).replace(/\{\{\s*([\w.-]+)\s*\}\}/g, (m, key) => {
       if (Object.prototype.hasOwnProperty.call(ds, key)) {
-        return '<span class="ph">' + esc(ds[key]) + "</span>";
+        const val = ds[key];
+        if (interactive) {
+          return '<span class="ph copyable" data-copy="' + esc(val) + '" title="' + esc(t("copy.clickToCopy")) + '">' + esc(val) + "</span>";
+        }
+        return '<span class="ph">' + esc(val) + "</span>";
       }
       return '<span class="ph" title="' + esc(t("ph.undefined")) + '">' + esc(m) + "</span>";
     });
@@ -260,13 +308,24 @@
     return r.dataLabel || t("case.dataDefault", { n: r.dataIdx + 1 });
   }
 
+  function testDataChips(r) {
+    if (!r.dataset) return "";
+    const keys = Object.keys(r.dataset).filter(k => k !== "label");
+    if (!keys.length) return "";
+    const chips = keys.map(k =>
+      '<button class="td-chip copyable" data-copy="' + esc(r.dataset[k]) + '" title="' + esc(t("copy.clickToCopy")) + '">' +
+        '<span class="k">' + esc(k) + ': </span><span class="v">' + esc(r.dataset[k]) + '</span></button>'
+    ).join("");
+    return '<div class="testdata"><span class="td-label">' + esc(t("case.testData")) + '</span>' + chips + '</div>';
+  }
+
   function stepsTable(r) {
     if (!r.steps.length) return '<p class="hint">' + esc(t("case.noSteps")) + '</p>';
     let rows = "";
     r.steps.forEach((s, i) => {
       const no = s.no != null ? s.no : (i + 1);
-      const act = subst(s.action || s.do || "", r.dataset);
-      const exp = subst(s.expected || s.expect || "", r.dataset);
+      const act = subst(s.action || s.do || "", r.dataset, true);
+      const exp = subst(s.expected || s.expect || "", r.dataset, true);
       rows += '<tr><td class="no">' + esc(no) + '</td><td>' + act + '</td><td>' + exp + '</td></tr>';
     });
     return '<table class="steps"><thead><tr><th>' + esc(t("step.no")) + '</th><th>' + esc(t("step.action")) +
@@ -292,6 +351,7 @@
         '</div>' +
         '<div class="case-body">' +
           (r.precondition ? '<div class="precond"><b>' + esc(t("case.precondition")) + '</b>' + esc(r.precondition) + '</div>' : "") +
+          testDataChips(r) +
           stepsTable(r) +
           '<div class="record">' +
             '<div class="label">' + esc(t("record.judge")) + '</div>' +
@@ -327,6 +387,8 @@
   // ---------- Events (delegated) ----------
   function wireRunnerEvents() {
     $("#caseList").addEventListener("click", (e) => {
+      const copyable = e.target.closest(".copyable");
+      if (copyable) { copyToClipboard(copyable.getAttribute("data-copy")); return; }
       const toggle = e.target.closest(".js-toggle");
       if (toggle) { toggle.closest(".case").classList.toggle("open"); return; }
       const sbtn = e.target.closest(".sbtn");
@@ -447,6 +509,16 @@ stat(c.pending, "#647488", SL("pending")) +
     wireDrop("#dropProc", "#fileProc", "#pasteProc", "proc");
     wireDrop("#dropData", "#fileData", "#pasteData", "data");
     wireRunnerEvents();
+
+    // Clear buttons (stopPropagation so the drop panel doesn't open the file dialog)
+    $("#btnClearProc").addEventListener("click", (e) => { e.stopPropagation(); clearInput("proc"); });
+    $("#btnClearData").addEventListener("click", (e) => { e.stopPropagation(); clearInput("data"); });
+
+    // Copy buttons for the JSON format samples
+    $$(".copy-btn").forEach(btn => btn.addEventListener("click", () => {
+      const pre = document.getElementById(btn.getAttribute("data-copy-target"));
+      if (pre) copyToClipboard(pre.textContent);
+    }));
 
     $("#btnBuild").addEventListener("click", build);
     $("#btnLoadSample").addEventListener("click", () => {

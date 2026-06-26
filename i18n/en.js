@@ -28,6 +28,11 @@ TW_I18N.register("en", {
   "loader.loadSample": "↑ Load this sample",
   "loader.pasted": "(pasted)",
   "loader.sample": "(sample)",
+  "loader.clear": "Clear",
+  "loader.copy": "Copy",
+
+  "copy.copied": "✓ Copied",
+  "copy.clickToCopy": "Click to copy",
 
   "err.noProc": "Please load a test procedure JSON.",
   "err.procParse": "Failed to parse procedure JSON: {msg}",
@@ -54,6 +59,7 @@ TW_I18N.register("en", {
   "case.dataDefault": "Data #{n}",
   "case.precondition": "Precondition: ",
   "case.noSteps": "No step definitions.",
+  "case.testData": "Test data",
 
   "step.no": "#",
   "step.action": "Step",
