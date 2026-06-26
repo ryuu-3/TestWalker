@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="doc.title">TestWalker</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="app-header">
+  <h1>🚶 TestWalker</h1>
+  <span class="meta-title" id="metaTitle"></span>
+  <span class="spacer"></span>
+  <span class="saved-flash" id="savedFlash" data-i18n="header.savedFlash"></span>
+  <label class="hint" for="langSel" data-i18n="header.lang"></label>
+  <select class="lang-sel" id="langSel" aria-label="language"></select>
+  <button class="ghost" id="btnReload" data-i18n="header.reload" data-i18n-title="header.reload.title"></button>
+  <button id="btnReport" disabled data-i18n="header.report"></button>
+  <button class="primary" id="btnReset" disabled data-i18n="header.reset" data-i18n-title="header.reset.title"></button>
+</header>
+
+<div class="wrap">
+
+  <!-- ====== Loader screen ====== -->
+  <section id="loader">
+    <div class="loader-grid">
+      <div class="drop" id="dropProc" data-kind="proc">
+        <h3><span data-i18n="loader.proc.title"></span> <span class="req" data-i18n="loader.required"></span></h3>
+        <p data-i18n="loader.dropHint"></p>
+        <p class="file-name" id="nameProc"></p>
+        <input type="file" accept=".json,application/json" class="hidden" id="fileProc">
+        <textarea id="pasteProc" data-i18n-ph="loader.pasteHint"></textarea>
+      </div>
+      <div class="drop" id="dropData" data-kind="data">
+        <h3><span data-i18n="loader.data.title"></span> <span class="opt" data-i18n="loader.optional"></span></h3>
+        <p data-i18n="loader.dropHint"></p>
+        <p class="file-name" id="nameData"></p>
+        <input type="file" accept=".json,application/json" class="hidden" id="fileData">
+        <textarea id="pasteData" data-i18n-ph="loader.pasteHint"></textarea>
+      </div>
+    </div>
+    <div class="loader-actions">
+      <button class="primary" id="btnBuild" data-i18n="loader.build"></button>
+      <span class="hint" data-i18n="loader.buildHint"></span>
+    </div>
+    <div class="error-box hidden" id="errBox"></div>
+
+    <details class="sample">
+      <summary data-i18n="loader.sampleSummary"></summary>
+      <p style="margin-top:10px"><b data-i18n="loader.sampleProcDesc"></b></p>
+      <pre id="sampleProc"></pre>
+      <p><b data-i18n="loader.sampleDataDesc"></b></p>
+      <pre id="sampleData"></pre>
+      <button id="btnLoadSample" class="ghost" data-i18n="loader.loadSample"></button>
+    </details>
+  </section>
+
+  <!-- ====== Runner screen ====== -->
+  <section id="runner" class="hidden">
+    <div class="summary" id="summary"></div>
+    <div class="filter-bar">
+      <input type="text" id="search" data-i18n-ph="runner.search">
+      <button class="chip active" data-f="all" data-i18n="filter.all"></button>
+      <button class="chip" data-f="pending" data-i18n="status.pending"></button>
+      <button class="chip" data-f="pass" data-i18n="status.pass"></button>
+      <button class="chip" data-f="fail" data-i18n="status.fail"></button>
+      <button class="chip" data-f="blocked" data-i18n="status.blocked"></button>
+      <button class="chip" data-f="skip" data-i18n="status.skip"></button>
+      <span class="spacer"></span>
+      <button class="ghost" id="btnExpandAll" data-i18n="runner.expandAll"></button>
+      <button class="ghost" id="btnCollapseAll" data-i18n="runner.collapseAll"></button>
+    </div>
+    <div id="caseList"></div>
+  </section>
+
+</div>
+
+<footer class="app-footer" data-i18n="footer"></footer>
+
+<!-- i18n engine, then language dictionaries (plain scripts so file:// works), then app -->
+<script src="js/i18n.js"></script>
+<script src="i18n/ja.js"></script>
+<script src="i18n/en.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
