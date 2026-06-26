@@ -324,8 +324,8 @@
     let rows = "";
     r.steps.forEach((s, i) => {
       const no = s.no != null ? s.no : (i + 1);
-      const act = subst(s.action || s.do || "", r.dataset, true);
-      const exp = subst(s.expected || s.expect || "", r.dataset, true);
+      const act = subst(s.action || s.do || "", r.dataset, true);   // copyable: step values are used as input
+      const exp = subst(s.expected || s.expect || "", r.dataset, false);  // expected results are not copy targets
       rows += '<tr><td class="no">' + esc(no) + '</td><td>' + act + '</td><td>' + exp + '</td></tr>';
     });
     return '<table class="steps"><thead><tr><th>' + esc(t("step.no")) + '</th><th>' + esc(t("step.action")) +
