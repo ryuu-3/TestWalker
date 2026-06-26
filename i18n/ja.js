@@ -73,6 +73,7 @@ TW_I18N.register("ja", {
   "record.tester": "実施者",
   "record.testerPh": "氏名",
   "record.updated": "最終更新: {ts}",
+  "record.passLocked": "全ステップを確認すると Pass にできます",
 
   "reset.confirm": "このテストの記録（ステータス・実測結果）をすべて消去します。よろしいですか？",
 

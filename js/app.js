@@ -341,9 +341,13 @@
     const st = rec.status || "pending";
     const open = openSet.has(r.runId);
     const dl = runDataLabel(r);
-    const statusBtns = STATUSES.map(s =>
-      '<button class="sbtn ' + (st === s ? "on" : "") + '" data-s="' + s + '" data-run="' + esc(r.runId) + '">' + esc(SL(s)) + '</button>'
-    ).join("");
+    const sp0 = stepProgress(r);
+    const allChecked = !sp0 || sp0.done === sp0.total;   // no steps => allowed
+    const statusBtns = STATUSES.map(s => {
+      const locked = (s === "pass" && !allChecked);
+      return '<button class="sbtn ' + (st === s ? "on" : "") + '" data-s="' + s + '" data-run="' + esc(r.runId) + '"' +
+        (locked ? ' disabled title="' + esc(t("record.passLocked")) + '"' : "") + '>' + esc(SL(s)) + '</button>';
+    }).join("");
     const sp = stepProgress(r);
     const spHtml = sp ? '<span class="step-prog js-stepprog">' + esc(t("case.stepProgress", { done: sp.done, total: sp.total })) + '</span>' : "";
     return '' +
@@ -399,6 +403,7 @@
       if (toggle) { toggle.closest(".case").classList.toggle("open"); return; }
       const sbtn = e.target.closest(".sbtn");
       if (sbtn) {
+        if (sbtn.disabled) return;   // Pass is locked until all steps are checked
         const runId = sbtn.dataset.run, s = sbtn.dataset.s;
         const rec = getRec(runId);
         rec.status = (rec.status === s) ? "pending" : s;   // toggle off if same
@@ -433,13 +438,35 @@
       const rec = getRec(runId);
       if (cb.checked) rec.steps[no] = true; else delete rec.steps[no];
       rec.ts = new Date().toLocaleString();
-      saveRecords();
+
       const card = cb.closest(".case");
       const r = runs.find(x => x.runId === runId);
       const sp = r && stepProgress(r);
+      const allChecked = !sp || sp.done === sp.total;
+
+      // Auto-revert Pass when steps are no longer all checked (keeps state consistent)
+      if (!allChecked && rec.status === "pass") {
+        rec.status = "pending";
+        card.className = "case st-pending" + (card.classList.contains("open") ? " open" : "");
+        $$(".sbtn", card).forEach(b => b.classList.remove("on"));
+        const badge = $(".badge", card);
+        badge.className = "badge pending";
+        badge.textContent = SL("pending");
+        renderSummary();
+      }
+
+      // Enable/disable the Pass button per the all-checked rule
+      const passBtn = card.querySelector('.sbtn[data-s="pass"]');
+      if (passBtn) {
+        passBtn.disabled = !allChecked;
+        if (allChecked) passBtn.removeAttribute("title");
+        else passBtn.title = t("record.passLocked");
+      }
+
       const spEl = $(".js-stepprog", card);
       if (spEl && sp) spEl.textContent = t("case.stepProgress", { done: sp.done, total: sp.total });
       const tsEl = $(".js-ts", card); if (tsEl) tsEl.textContent = t("record.updated", { ts: rec.ts });
+      saveRecords();
     });
 
     $$(".chip").forEach(ch => ch.addEventListener("click", () => {

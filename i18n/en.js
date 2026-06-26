@@ -73,6 +73,7 @@ TW_I18N.register("en", {
   "record.tester": "Tester",
   "record.testerPh": "Name",
   "record.updated": "Updated: {ts}",
+  "record.passLocked": "Check all steps to enable Pass",
 
   "reset.confirm": "This will erase all records (status and actual results) for this test. Continue?",
 
