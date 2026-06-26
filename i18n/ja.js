@@ -59,11 +59,12 @@ TW_I18N.register("ja", {
   "case.dataDefault": "データ#{n}",
   "case.precondition": "前提条件：",
   "case.noSteps": "手順ステップの定義はありません。",
-  "case.testData": "テストデータ",
+  "case.stepProgress": "ステップ {done}/{total}",
 
   "step.no": "#",
   "step.action": "操作手順",
   "step.expected": "期待結果",
+  "step.check": "確認",
   "ph.undefined": "データ未定義",
 
   "record.judge": "判定",

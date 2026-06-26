@@ -59,11 +59,12 @@ TW_I18N.register("en", {
   "case.dataDefault": "Data #{n}",
   "case.precondition": "Precondition: ",
   "case.noSteps": "No step definitions.",
-  "case.testData": "Test data",
+  "case.stepProgress": "Steps {done}/{total}",
 
   "step.no": "#",
   "step.action": "Step",
   "step.expected": "Expected result",
+  "step.check": "Done",
   "ph.undefined": "data undefined",
 
   "record.judge": "Result",

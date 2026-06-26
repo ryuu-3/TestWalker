@@ -249,7 +249,8 @@
     saveTimer = setTimeout(() => flash.classList.remove("show"), 1200);
   }
   function getRec(runId) {
-    if (!records[runId]) records[runId] = { status: "pending", actual: "", tester: "", ts: "" };
+    if (!records[runId]) records[runId] = { status: "pending", actual: "", tester: "", ts: "", steps: {} };
+    if (!records[runId].steps) records[runId].steps = {};   // back-compat for older saved data
     return records[runId];
   }
 
@@ -308,28 +309,31 @@
     return r.dataLabel || t("case.dataDefault", { n: r.dataIdx + 1 });
   }
 
-  function testDataChips(r) {
-    if (!r.dataset) return "";
-    const keys = Object.keys(r.dataset).filter(k => k !== "label");
-    if (!keys.length) return "";
-    const chips = keys.map(k =>
-      '<button class="td-chip copyable" data-copy="' + esc(r.dataset[k]) + '" title="' + esc(t("copy.clickToCopy")) + '">' +
-        '<span class="k">' + esc(k) + ': </span><span class="v">' + esc(r.dataset[k]) + '</span></button>'
-    ).join("");
-    return '<div class="testdata"><span class="td-label">' + esc(t("case.testData")) + '</span>' + chips + '</div>';
+  function stepProgress(r) {
+    const total = r.steps.length;
+    if (!total) return null;
+    const rec = records[r.runId];
+    const checked = (rec && rec.steps)
+      ? r.steps.reduce((acc, s, i) => acc + (rec.steps[s.no != null ? s.no : (i + 1)] ? 1 : 0), 0)
+      : 0;
+    return { done: checked, total: total };
   }
 
   function stepsTable(r) {
+    const rec = getRec(r.runId);
     if (!r.steps.length) return '<p class="hint">' + esc(t("case.noSteps")) + '</p>';
+    const steps = rec.steps || {};
     let rows = "";
     r.steps.forEach((s, i) => {
       const no = s.no != null ? s.no : (i + 1);
       const act = subst(s.action || s.do || "", r.dataset, true);   // copyable: step values are used as input
       const exp = subst(s.expected || s.expect || "", r.dataset, false);  // expected results are not copy targets
-      rows += '<tr><td class="no">' + esc(no) + '</td><td>' + act + '</td><td>' + exp + '</td></tr>';
+      const checked = steps[no] ? " checked" : "";
+      rows += '<tr><td class="no">' + esc(no) + '</td><td>' + act + '</td><td>' + exp + '</td>' +
+        '<td class="chk"><input type="checkbox" class="js-step" data-run="' + esc(r.runId) + '" data-no="' + esc(no) + '"' + checked + '></td></tr>';
     });
     return '<table class="steps"><thead><tr><th>' + esc(t("step.no")) + '</th><th>' + esc(t("step.action")) +
-      '</th><th>' + esc(t("step.expected")) + '</th></tr></thead><tbody>' + rows + '</tbody></table>';
+      '</th><th>' + esc(t("step.expected")) + '</th><th class="chk">' + esc(t("step.check")) + '</th></tr></thead><tbody>' + rows + '</tbody></table>';
   }
 
   function caseCard(r, openSet) {
@@ -340,6 +344,8 @@
     const statusBtns = STATUSES.map(s =>
       '<button class="sbtn ' + (st === s ? "on" : "") + '" data-s="' + s + '" data-run="' + esc(r.runId) + '">' + esc(SL(s)) + '</button>'
     ).join("");
+    const sp = stepProgress(r);
+    const spHtml = sp ? '<span class="step-prog js-stepprog">' + esc(t("case.stepProgress", { done: sp.done, total: sp.total })) + '</span>' : "";
     return '' +
       '<div class="case st-' + st + (open ? " open" : "") + '" data-run="' + esc(r.runId) + '">' +
         '<div class="case-head js-toggle">' +
@@ -347,11 +353,11 @@
           '<span class="case-id">' + esc(r.caseId) + '</span>' +
           '<span class="case-title">' + esc(runTitle(r)) + '</span>' +
           (dl ? '<span class="data-label">' + esc(dl) + '</span>' : "") +
+          spHtml +
           '<span class="badge ' + st + '">' + esc(SL(st)) + '</span>' +
         '</div>' +
         '<div class="case-body">' +
           (r.precondition ? '<div class="precond"><b>' + esc(t("case.precondition")) + '</b>' + esc(r.precondition) + '</div>' : "") +
-          testDataChips(r) +
           stepsTable(r) +
           '<div class="record">' +
             '<div class="label">' + esc(t("record.judge")) + '</div>' +
@@ -420,6 +426,22 @@
       saveRecords();
     });
 
+    $("#caseList").addEventListener("change", (e) => {
+      const cb = e.target.closest(".js-step");
+      if (!cb) return;
+      const runId = cb.dataset.run, no = cb.dataset.no;
+      const rec = getRec(runId);
+      if (cb.checked) rec.steps[no] = true; else delete rec.steps[no];
+      rec.ts = new Date().toLocaleString();
+      saveRecords();
+      const card = cb.closest(".case");
+      const r = runs.find(x => x.runId === runId);
+      const sp = r && stepProgress(r);
+      const spEl = $(".js-stepprog", card);
+      if (spEl && sp) spEl.textContent = t("case.stepProgress", { done: sp.done, total: sp.total });
+      const tsEl = $(".js-ts", card); if (tsEl) tsEl.textContent = t("record.updated", { ts: rec.ts });
+    });
+
     $$(".chip").forEach(ch => ch.addEventListener("click", () => {
       $$(".chip").forEach(c => c.classList.remove("active"));
       ch.classList.add("active");
@@ -439,22 +461,25 @@
     const now = new Date().toLocaleString();
     let rows = "";
     runs.forEach(r => {
-      const rec = records[r.runId] || { status: "pending", actual: "", tester: "", ts: "" };
+      const rec = records[r.runId] || { status: "pending", actual: "", tester: "", ts: "", steps: {} };
+      const recSteps = rec.steps || {};
       const dl = runDataLabel(r);
+      const sp = stepProgress(r);
       let stepsHtml = "";
       r.steps.forEach((s, i) => {
         const no = s.no != null ? s.no : (i + 1);
         stepsHtml += "<tr><td>" + esc(no) + "</td><td>" + subst(s.action || "", r.dataset) +
-          "</td><td>" + subst(s.expected || "", r.dataset) + "</td></tr>";
+          "</td><td>" + subst(s.expected || "", r.dataset) + "</td><td class='ck'>" + (recSteps[no] ? "✓" : "") + "</td></tr>";
       });
       rows +=
         '<div class="rc st-' + rec.status + '">' +
         '<div class="rc-h"><span class="cid">' + esc(r.caseId) + '</span> ' + esc(runTitle(r)) +
         (dl ? ' <span class="dl">' + esc(dl) + '</span>' : "") +
+        (sp ? ' <span class="sp">' + esc(t("case.stepProgress", { done: sp.done, total: sp.total })) + '</span>' : "") +
         ' <span class="bd ' + rec.status + '">' + esc(SL(rec.status)) + '</span></div>' +
         (r.precondition ? '<div class="pc">' + esc(t("report.precond", { v: r.precondition })) + '</div>' : "") +
         (stepsHtml ? '<table class="st"><tr><th>' + esc(t("step.no")) + '</th><th>' + esc(t("step.action")) +
-          '</th><th>' + esc(t("step.expected")) + '</th></tr>' + stepsHtml + '</table>' : "") +
+          '</th><th>' + esc(t("step.expected")) + '</th><th>' + esc(t("step.check")) + '</th></tr>' + stepsHtml + '</table>' : "") +
         '<div class="ac"><b>' + esc(t("report.actual")) + '</b> ' + (rec.actual ? esc(rec.actual) : '<i>' + esc(t("report.empty")) + '</i>') + '</div>' +
         '<div class="mt">' + esc(t("report.metaLine", { tester: rec.tester || t("report.empty"), ts: rec.ts || t("report.empty") })) + '</div>' +
         '</div>';
@@ -471,7 +496,8 @@
 '.rc{border:1px solid #d8dee6;border-left:5px solid #ccc;border-radius:8px;padding:12px;margin:10px 0}' +
 '.rc.st-pass{border-left-color:#16a34a}.rc.st-fail{border-left-color:#dc2626}.rc.st-blocked{border-left-color:#d97706}.rc.st-skip{border-left-color:#6b7280}' +
 '.rc-h{font-weight:600;font-size:14px}.cid{font-family:monospace;background:#f1f4f8;padding:1px 6px;border-radius:4px;font-size:12px}' +
-'.dl{color:#2563eb;font-size:12px}.pc{color:#647488;margin:6px 0;font-size:12px}' +
+'.dl{color:#2563eb;font-size:12px}.sp{color:#647488;font-size:12px}.pc{color:#647488;margin:6px 0;font-size:12px}' +
+'table.st td.ck{text-align:center;color:#16a34a;font-weight:700;width:40px}' +
 '.bd{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px}.bd.pass{background:#dcfce7;color:#16a34a}.bd.fail{background:#fee2e2;color:#dc2626}.bd.blocked{background:#fef3c7;color:#d97706}.bd.skip{background:#f1f5f9;color:#6b7280}.bd.pending{background:#eef1f5;color:#647488}' +
 'table.st{border-collapse:collapse;width:100%;margin:8px 0}table.st th,table.st td{border:1px solid #d8dee6;padding:5px 8px;text-align:left;vertical-align:top}table.st th{background:#f1f4f8;font-size:11px;color:#647488}' +
 '.ph{background:#e8f0fe;color:#2563eb;border-radius:3px;padding:0 3px}.ac{margin:6px 0}.mt{font-size:11px;color:#647488}' +
