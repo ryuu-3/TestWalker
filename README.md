@@ -66,13 +66,17 @@ i18n/en.js           英語辞書
 
 ### テストデータJSON（任意）
 テストケースIDで紐付け。1ケースに複数データセットを定義でき、各データセットが1実施行になります。
-`label` は画面上の識別名として表示されます。
+データセットは **入力データ（`data`）とメタ情報（`label` / `expected`）を分離**した構造です。
+
+- `data` … 本物の入力値。手順文の `{{キー}}` はここから置換され、**クリックでコピー**できる対象
+- `label` … 画面上の識別名（データラベル）
+- `expected` … そのデータの想定結果（「想定結果」ブロックに表示。入力値ではないのでコピー対象外）
 
 ```json
 {
   "TC-001": [
-    { "label": "正常系",       "email": "user@example.com", "password": "Pass1234", "result": "ホーム画面に遷移する" },
-    { "label": "誤パスワード", "email": "user@example.com", "password": "wrong",    "result": "エラーが表示される" }
+    { "label": "正常系",       "expected": "ホーム画面に遷移する",       "data": { "email": "user@example.com", "password": "Pass1234" } },
+    { "label": "誤パスワード", "expected": "エラーメッセージが表示される", "data": { "email": "user@example.com", "password": "wrong" } }
   ]
 }
 ```
