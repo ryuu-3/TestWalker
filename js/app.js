@@ -15,7 +15,7 @@
         steps: [
           { no: 1, action: "ログイン画面を開く", expected: "メール／パスワード入力欄が表示される" },
           { no: 2, action: "メール「{{email}}」を入力する", expected: "入力値が反映される" },
-          { no: 3, action: "パスワード「{{password}}」を入力しログイン", expected: "{{result}}" }
+          { no: 3, action: "パスワード「{{password}}」を入力しログイン", expected: "ログイン処理が実行される" }
         ]
       },
       {
@@ -30,8 +30,8 @@
   };
   const SAMPLE_DATA = {
     "TC-001": [
-      { label: "正常系", email: "user@example.com", password: "Pass1234", result: "ホーム画面に遷移する" },
-      { label: "誤パスワード", email: "user@example.com", password: "wrong", result: "エラーメッセージが表示される" }
+      { label: "正常系", expected: "ホーム画面に遷移する", data: { email: "user@example.com", password: "Pass1234" } },
+      { label: "誤パスワード", expected: "エラーメッセージが表示される", data: { email: "user@example.com", password: "wrong" } }
     ]
   };
 
@@ -209,7 +209,9 @@
           steps: tc.steps || [],
           dataset: ds,
           dataIdx: di,
-          dataLabel: ds ? (ds.label || null) : null
+          dataLabel: ds ? (ds.label || null) : null,
+          dataInputs: ds && ds.data ? ds.data : null,   // true input values (nested)
+          dataExpected: ds ? (ds.expected || null) : null
         });
       });
     });
@@ -326,8 +328,8 @@
     let rows = "";
     r.steps.forEach((s, i) => {
       const no = s.no != null ? s.no : (i + 1);
-      const act = subst(s.action || s.do || "", r.dataset, true);   // copyable: step values are used as input
-      const exp = subst(s.expected || s.expect || "", r.dataset, false);  // expected results are not copy targets
+      const act = subst(s.action || s.do || "", r.dataInputs, true);   // copyable: step values are used as input
+      const exp = subst(s.expected || s.expect || "", r.dataInputs, false);  // expected results are not copy targets
       const checked = steps[no] ? " checked" : "";
       rows += '<tr><td class="no">' + esc(no) + '</td><td>' + act + '</td><td>' + exp + '</td>' +
         '<td class="chk"><input type="checkbox" class="js-step" data-run="' + esc(r.runId) + '" data-no="' + esc(no) + '"' + checked + '></td></tr>';
@@ -359,6 +361,7 @@
         '<div class="case-body">' +
           (r.precondition ? '<div class="precond"><b>' + esc(t("case.precondition")) + '</b>' + esc(r.precondition) + '</div>' : "") +
           stepsTable(r) +
+          (r.dataExpected ? '<div class="expected-data"><b>' + esc(t("case.expected")) + '</b>' + esc(r.dataExpected) + '</div>' : "") +
           '<div class="record">' +
             '<div class="label">' + esc(t("record.judge")) + '</div>' +
             '<div><div class="status-btns">' + statusBtns + '</div></div>' +
@@ -468,8 +471,8 @@
       let stepsHtml = "";
       r.steps.forEach((s, i) => {
         const no = s.no != null ? s.no : (i + 1);
-        stepsHtml += "<tr><td>" + esc(no) + "</td><td>" + subst(s.action || "", r.dataset) +
-          "</td><td>" + subst(s.expected || "", r.dataset) + "</td><td class='ck'>" + (recSteps[no] ? "✓" : "") + "</td></tr>";
+        stepsHtml += "<tr><td>" + esc(no) + "</td><td>" + subst(s.action || "", r.dataInputs) +
+          "</td><td>" + subst(s.expected || "", r.dataInputs) + "</td><td class='ck'>" + (recSteps[no] ? "✓" : "") + "</td></tr>";
       });
       rows +=
         '<div class="rc st-' + rec.status + '">' +
@@ -480,6 +483,7 @@
         (r.precondition ? '<div class="pc">' + esc(t("report.precond", { v: r.precondition })) + '</div>' : "") +
         (stepsHtml ? '<table class="st"><tr><th>' + esc(t("step.no")) + '</th><th>' + esc(t("step.action")) +
           '</th><th>' + esc(t("step.expected")) + '</th><th>' + esc(t("step.check")) + '</th></tr>' + stepsHtml + '</table>' : "") +
+        (r.dataExpected ? '<div class="pc"><b>' + esc(t("case.expected")) + '</b>' + esc(r.dataExpected) + '</div>' : "") +
         '<div class="ac"><b>' + esc(t("report.actual")) + '</b> ' + (rec.actual ? esc(rec.actual) : '<i>' + esc(t("report.empty")) + '</i>') + '</div>' +
         '<div class="mt">' + esc(t("report.metaLine", { tester: rec.tester || t("report.empty"), ts: rec.ts || t("report.empty") })) + '</div>' +
         '</div>';

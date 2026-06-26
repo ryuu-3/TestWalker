@@ -24,7 +24,7 @@ TW_I18N.register("ja", {
   "loader.buildHint": "手順JSONだけでも生成できます。データJSONを与えるとデータ駆動で展開されます。",
   "loader.sampleSummary": "JSONフォーマットの例を見る",
   "loader.sampleProcDesc": "手順JSON（手順文の {{キー}} はデータで置換されます）",
-  "loader.sampleDataDesc": "テストデータJSON（テストケースIDで紐付け。1ケースに複数データセット可）",
+  "loader.sampleDataDesc": "テストデータJSON（ケースIDで紐付け。入力値は data に入れ、label=識別名／expected=想定結果）",
   "loader.loadSample": "↑ このサンプルを読み込む",
   "loader.pasted": "(貼り付け)",
   "loader.sample": "(サンプル)",
@@ -58,6 +58,7 @@ TW_I18N.register("ja", {
   "case.untitled": "(無題)",
   "case.dataDefault": "データ#{n}",
   "case.precondition": "前提条件：",
+  "case.expected": "想定結果：",
   "case.noSteps": "手順ステップの定義はありません。",
   "case.stepProgress": "ステップ {done}/{total}",
 

@@ -191,6 +191,8 @@ details.sample pre { background: #0f172a; color: #e2e8f0; padding: 12px; border-
 .case.open .case-body { display: block; }
 .precond { background:#f8fafc; border:1px solid var(--border); border-radius:6px; padding:8px 12px; margin: 10px 0; font-size:13px; }
 .precond b { color: var(--muted); font-weight:600; }
+.expected-data { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:8px 12px; margin: 4px 0 10px; font-size:13px; }
+.expected-data b { color: var(--pass); font-weight:600; }
 
 table.steps { width: 100%; border-collapse: collapse; margin: 8px 0 14px; }
 table.steps th, table.steps td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; font-size: 13px; }
