@@ -24,7 +24,7 @@ TW_I18N.register("ja", {
   "loader.buildHint": "手順JSONだけでも生成できます。データJSONを与えるとデータ駆動で展開されます。",
   "loader.sampleSummary": "JSONフォーマットの例を見る",
   "loader.sampleProcDesc": "手順JSON（手順文の {{キー}} はデータで置換されます）",
-  "loader.sampleDataDesc": "テストデータJSON（ケースIDで紐付け。入力値は data に入れ、label=識別名／expected=想定結果）",
+  "loader.sampleDataDesc": "テストデータJSON（ケースIDで紐付け。入力値は data に入れ、label=識別名。期待結果は手順側に書く）",
   "loader.loadSample": "↑ このサンプルを読み込む",
   "loader.pasted": "(貼り付け)",
   "loader.sample": "(サンプル)",
@@ -58,14 +58,14 @@ TW_I18N.register("ja", {
   "case.untitled": "(無題)",
   "case.dataDefault": "データ#{n}",
   "case.precondition": "前提条件：",
-  "case.expected": "想定結果：",
   "case.noSteps": "手順ステップの定義はありません。",
-  "case.stepProgress": "ステップ {done}/{total}",
+  "case.stepProgress": "OK {ok}・NG {ng}・未 {none}",
 
   "step.no": "#",
   "step.action": "操作手順",
   "step.expected": "期待結果",
-  "step.check": "確認",
+  "step.result": "結果",
+  "stepResult.none": "未実施",
   "ph.undefined": "データ未定義",
 
   "record.judge": "判定",
@@ -74,7 +74,7 @@ TW_I18N.register("ja", {
   "record.tester": "実施者",
   "record.testerPh": "氏名",
   "record.updated": "最終更新: {ts}",
-  "record.passLocked": "全ステップを確認すると Pass にできます",
+  "record.passLocked": "全ステップを OK にすると Pass にできます",
 
   "reset.confirm": "このテストの記録（ステータス・実測結果）をすべて消去します。よろしいですか？",
 
