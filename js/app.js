@@ -25,13 +25,35 @@
         steps: [
           { no: 1, action: "メニューからログアウトを選択", expected: "ログイン画面に戻る" }
         ]
+      },
+      {
+        // 1項目＝1ケース・複数ステップ・名前付き data のパターン
+        id: "TC-003",
+        title: "メールアドレスのバリデーション",
+        precondition: "/signup を開いていること",
+        steps: [
+          { no: 1, action: "メール「{{empty}}」を入力し認証コード送信を押す", expected: "バリデーションエラー（未入力）。コード未送信" },
+          { no: 2, action: "メール「{{noAt}}」を入力し認証コード送信を押す", expected: "バリデーションエラー（@なし）。コード未送信" },
+          { no: 3, action: "メール「{{noDomain}}」を入力し認証コード送信を押す", expected: "バリデーションエラー（ドメインなし）。コード未送信" },
+          { no: 4, action: "メール「{{spaces}}」を入力し認証コード送信を押す", expected: "バリデーションエラー（空白混入）。コード未送信" },
+          { no: 5, action: "メール「{{valid}}」を入力し認証コード送信を押す", expected: "認証コードが送信される" }
+        ]
       }
     ]
   };
   const SAMPLE_DATA = {
     "TC-001": [
-      { label: "正常系", expected: "ホーム画面に遷移する", data: { email: "user@example.com", password: "Pass1234" } },
-      { label: "誤パスワード", expected: "エラーメッセージが表示される", data: { email: "user@example.com", password: "wrong" } }
+      { label: "正常系", data: { email: "user@example.com", password: "Pass1234" } },
+      { label: "誤パスワード", data: { email: "user@example.com", password: "wrong" } }
+    ],
+    "TC-003": [
+      { label: "メールパターン", data: {
+        empty: "",
+        noAt: "notanemail",
+        noDomain: "test@",
+        spaces: "test user@example.com",
+        valid: "user@example.com"
+      } }
     ]
   };
 
@@ -210,8 +232,7 @@
           dataset: ds,
           dataIdx: di,
           dataLabel: ds ? (ds.label || null) : null,
-          dataInputs: ds && ds.data ? ds.data : null,   // true input values (nested)
-          dataExpected: ds ? (ds.expected || null) : null
+          dataInputs: ds && ds.data ? ds.data : null    // true input values (nested)
         });
       });
     });
@@ -315,27 +336,37 @@
     const total = r.steps.length;
     if (!total) return null;
     const rec = records[r.runId];
-    const checked = (rec && rec.steps)
-      ? r.steps.reduce((acc, s, i) => acc + (rec.steps[s.no != null ? s.no : (i + 1)] ? 1 : 0), 0)
-      : 0;
-    return { done: checked, total: total };
+    const steps = (rec && rec.steps) || {};
+    let ok = 0, ng = 0;
+    r.steps.forEach((s, i) => {
+      const v = steps[s.no != null ? s.no : (i + 1)];
+      if (v === "OK") ok++; else if (v === "NG") ng++;
+    });
+    return { ok: ok, ng: ng, none: total - ok - ng, total: total };
   }
+  // Pass is allowed only when every step is OK (cases with no steps are allowed).
+  function allStepsOk(r) { const sp = stepProgress(r); return !sp || sp.ok === sp.total; }
 
   function stepsTable(r) {
     const rec = getRec(r.runId);
     if (!r.steps.length) return '<p class="hint">' + esc(t("case.noSteps")) + '</p>';
     const steps = rec.steps || {};
+    const opt = (val, cur) => '<option value="' + val + '"' + (cur === val ? " selected" : "") + '>' +
+      (val ? val : esc(t("stepResult.none"))) + '</option>';
     let rows = "";
     r.steps.forEach((s, i) => {
       const no = s.no != null ? s.no : (i + 1);
       const act = subst(s.action || s.do || "", r.dataInputs, true);   // copyable: step values are used as input
       const exp = subst(s.expected || s.expect || "", r.dataInputs, false);  // expected results are not copy targets
-      const checked = steps[no] ? " checked" : "";
+      const cur = steps[no] || "";
+      const cls = cur === "OK" ? "res-ok" : cur === "NG" ? "res-ng" : "res-none";
+      const sel = '<select class="js-step ' + cls + '" data-run="' + esc(r.runId) + '" data-no="' + esc(no) + '">' +
+        opt("", cur) + opt("OK", cur) + opt("NG", cur) + '</select>';
       rows += '<tr><td class="no">' + esc(no) + '</td><td>' + act + '</td><td>' + exp + '</td>' +
-        '<td class="chk"><input type="checkbox" class="js-step" data-run="' + esc(r.runId) + '" data-no="' + esc(no) + '"' + checked + '></td></tr>';
+        '<td class="res">' + sel + '</td></tr>';
     });
     return '<table class="steps"><thead><tr><th>' + esc(t("step.no")) + '</th><th>' + esc(t("step.action")) +
-      '</th><th>' + esc(t("step.expected")) + '</th><th class="chk">' + esc(t("step.check")) + '</th></tr></thead><tbody>' + rows + '</tbody></table>';
+      '</th><th>' + esc(t("step.expected")) + '</th><th class="res">' + esc(t("step.result")) + '</th></tr></thead><tbody>' + rows + '</tbody></table>';
   }
 
   function caseCard(r, openSet) {
@@ -343,15 +374,14 @@
     const st = rec.status || "pending";
     const open = openSet.has(r.runId);
     const dl = runDataLabel(r);
-    const sp0 = stepProgress(r);
-    const allChecked = !sp0 || sp0.done === sp0.total;   // no steps => allowed
+    const allOk = allStepsOk(r);
     const statusBtns = STATUSES.map(s => {
-      const locked = (s === "pass" && !allChecked);
+      const locked = (s === "pass" && !allOk);
       return '<button class="sbtn ' + (st === s ? "on" : "") + '" data-s="' + s + '" data-run="' + esc(r.runId) + '"' +
         (locked ? ' disabled title="' + esc(t("record.passLocked")) + '"' : "") + '>' + esc(SL(s)) + '</button>';
     }).join("");
     const sp = stepProgress(r);
-    const spHtml = sp ? '<span class="step-prog js-stepprog">' + esc(t("case.stepProgress", { done: sp.done, total: sp.total })) + '</span>' : "";
+    const spHtml = sp ? '<span class="step-prog js-stepprog">' + esc(t("case.stepProgress", { ok: sp.ok, ng: sp.ng, none: sp.none })) + '</span>' : "";
     return '' +
       '<div class="case st-' + st + (open ? " open" : "") + '" data-run="' + esc(r.runId) + '">' +
         '<div class="case-head js-toggle">' +
@@ -365,7 +395,6 @@
         '<div class="case-body">' +
           (r.precondition ? '<div class="precond"><b>' + esc(t("case.precondition")) + '</b>' + esc(r.precondition) + '</div>' : "") +
           stepsTable(r) +
-          (r.dataExpected ? '<div class="expected-data"><b>' + esc(t("case.expected")) + '</b>' + esc(r.dataExpected) + '</div>' : "") +
           '<div class="record">' +
             '<div class="label">' + esc(t("record.judge")) + '</div>' +
             '<div><div class="status-btns">' + statusBtns + '</div></div>' +
@@ -435,20 +464,24 @@
     });
 
     $("#caseList").addEventListener("change", (e) => {
-      const cb = e.target.closest(".js-step");
-      if (!cb) return;
-      const runId = cb.dataset.run, no = cb.dataset.no;
+      const sel = e.target.closest(".js-step");
+      if (!sel) return;
+      const runId = sel.dataset.run, no = sel.dataset.no, val = sel.value;
       const rec = getRec(runId);
-      if (cb.checked) rec.steps[no] = true; else delete rec.steps[no];
+      if (val) rec.steps[no] = val; else delete rec.steps[no];
       rec.ts = new Date().toLocaleString();
 
-      const card = cb.closest(".case");
+      // Recolor the select to reflect its value
+      sel.classList.remove("res-ok", "res-ng", "res-none");
+      sel.classList.add(val === "OK" ? "res-ok" : val === "NG" ? "res-ng" : "res-none");
+
+      const card = sel.closest(".case");
       const r = runs.find(x => x.runId === runId);
       const sp = r && stepProgress(r);
-      const allChecked = !sp || sp.done === sp.total;
+      const allOk = !sp || sp.ok === sp.total;
 
-      // Auto-revert Pass when steps are no longer all checked (keeps state consistent)
-      if (!allChecked && rec.status === "pass") {
+      // Auto-revert Pass when steps are no longer all OK (keeps state consistent)
+      if (!allOk && rec.status === "pass") {
         rec.status = "pending";
         card.className = "case st-pending" + (card.classList.contains("open") ? " open" : "");
         $$(".sbtn", card).forEach(b => b.classList.remove("on"));
@@ -458,16 +491,16 @@
         renderSummary();
       }
 
-      // Enable/disable the Pass button per the all-checked rule
+      // Enable/disable the Pass button per the all-OK rule
       const passBtn = card.querySelector('.sbtn[data-s="pass"]');
       if (passBtn) {
-        passBtn.disabled = !allChecked;
-        if (allChecked) passBtn.removeAttribute("title");
+        passBtn.disabled = !allOk;
+        if (allOk) passBtn.removeAttribute("title");
         else passBtn.title = t("record.passLocked");
       }
 
       const spEl = $(".js-stepprog", card);
-      if (spEl && sp) spEl.textContent = t("case.stepProgress", { done: sp.done, total: sp.total });
+      if (spEl && sp) spEl.textContent = t("case.stepProgress", { ok: sp.ok, ng: sp.ng, none: sp.none });
       const tsEl = $(".js-ts", card); if (tsEl) tsEl.textContent = t("record.updated", { ts: rec.ts });
       saveRecords();
     });
@@ -498,19 +531,20 @@
       let stepsHtml = "";
       r.steps.forEach((s, i) => {
         const no = s.no != null ? s.no : (i + 1);
+        const rv = recSteps[no] || "";
+        const rcell = rv === "OK" ? '<span class="r-ok">OK</span>' : rv === "NG" ? '<span class="r-ng">NG</span>' : "";
         stepsHtml += "<tr><td>" + esc(no) + "</td><td>" + subst(s.action || "", r.dataInputs) +
-          "</td><td>" + subst(s.expected || "", r.dataInputs) + "</td><td class='ck'>" + (recSteps[no] ? "✓" : "") + "</td></tr>";
+          "</td><td>" + subst(s.expected || "", r.dataInputs) + "</td><td class='rcell'>" + rcell + "</td></tr>";
       });
       rows +=
         '<div class="rc st-' + rec.status + '">' +
         '<div class="rc-h"><span class="cid">' + esc(r.caseId) + '</span> ' + esc(runTitle(r)) +
         (dl ? ' <span class="dl">' + esc(dl) + '</span>' : "") +
-        (sp ? ' <span class="sp">' + esc(t("case.stepProgress", { done: sp.done, total: sp.total })) + '</span>' : "") +
+        (sp ? ' <span class="sp">' + esc(t("case.stepProgress", { ok: sp.ok, ng: sp.ng, none: sp.none })) + '</span>' : "") +
         ' <span class="bd ' + rec.status + '">' + esc(SL(rec.status)) + '</span></div>' +
         (r.precondition ? '<div class="pc">' + esc(t("report.precond", { v: r.precondition })) + '</div>' : "") +
         (stepsHtml ? '<table class="st"><tr><th>' + esc(t("step.no")) + '</th><th>' + esc(t("step.action")) +
-          '</th><th>' + esc(t("step.expected")) + '</th><th>' + esc(t("step.check")) + '</th></tr>' + stepsHtml + '</table>' : "") +
-        (r.dataExpected ? '<div class="pc"><b>' + esc(t("case.expected")) + '</b>' + esc(r.dataExpected) + '</div>' : "") +
+          '</th><th>' + esc(t("step.expected")) + '</th><th>' + esc(t("step.result")) + '</th></tr>' + stepsHtml + '</table>' : "") +
         '<div class="ac"><b>' + esc(t("report.actual")) + '</b> ' + (rec.actual ? esc(rec.actual) : '<i>' + esc(t("report.empty")) + '</i>') + '</div>' +
         '<div class="mt">' + esc(t("report.metaLine", { tester: rec.tester || t("report.empty"), ts: rec.ts || t("report.empty") })) + '</div>' +
         '</div>';
@@ -528,7 +562,7 @@
 '.rc.st-pass{border-left-color:#16a34a}.rc.st-fail{border-left-color:#dc2626}.rc.st-blocked{border-left-color:#d97706}.rc.st-skip{border-left-color:#6b7280}' +
 '.rc-h{font-weight:600;font-size:14px}.cid{font-family:monospace;background:#f1f4f8;padding:1px 6px;border-radius:4px;font-size:12px}' +
 '.dl{color:#2563eb;font-size:12px}.sp{color:#647488;font-size:12px}.pc{color:#647488;margin:6px 0;font-size:12px}' +
-'table.st td.ck{text-align:center;color:#16a34a;font-weight:700;width:40px}' +
+'table.st td.rcell{text-align:center;font-weight:700;width:48px}.r-ok{color:#16a34a}.r-ng{color:#dc2626}' +
 '.bd{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px}.bd.pass{background:#dcfce7;color:#16a34a}.bd.fail{background:#fee2e2;color:#dc2626}.bd.blocked{background:#fef3c7;color:#d97706}.bd.skip{background:#f1f5f9;color:#6b7280}.bd.pending{background:#eef1f5;color:#647488}' +
 'table.st{border-collapse:collapse;width:100%;margin:8px 0}table.st th,table.st td{border:1px solid #d8dee6;padding:5px 8px;text-align:left;vertical-align:top}table.st th{background:#f1f4f8;font-size:11px;color:#647488}' +
 '.ph{background:#e8f0fe;color:#2563eb;border-radius:3px;padding:0 3px}.ac{margin:6px 0}.mt{font-size:11px;color:#647488}' +

@@ -24,7 +24,7 @@ TW_I18N.register("en", {
   "loader.buildHint": "The procedure JSON alone is enough. Providing a data JSON expands cases in a data-driven way.",
   "loader.sampleSummary": "Show JSON format examples",
   "loader.sampleProcDesc": "Procedure JSON ({{key}} tokens in steps are replaced by data)",
-  "loader.sampleDataDesc": "Test data JSON (linked by case ID; put input values under data; label=name, expected=expected outcome)",
+  "loader.sampleDataDesc": "Test data JSON (linked by case ID; put input values under data; label=name. Expected results live in the procedure steps)",
   "loader.loadSample": "↑ Load this sample",
   "loader.pasted": "(pasted)",
   "loader.sample": "(sample)",
@@ -58,14 +58,14 @@ TW_I18N.register("en", {
   "case.untitled": "(untitled)",
   "case.dataDefault": "Data #{n}",
   "case.precondition": "Precondition: ",
-  "case.expected": "Expected outcome: ",
   "case.noSteps": "No step definitions.",
-  "case.stepProgress": "Steps {done}/{total}",
+  "case.stepProgress": "OK {ok} · NG {ng} · None {none}",
 
   "step.no": "#",
   "step.action": "Step",
   "step.expected": "Expected result",
-  "step.check": "Done",
+  "step.result": "Result",
+  "stepResult.none": "—",
   "ph.undefined": "data undefined",
 
   "record.judge": "Result",
@@ -74,7 +74,7 @@ TW_I18N.register("en", {
   "record.tester": "Tester",
   "record.testerPh": "Name",
   "record.updated": "Updated: {ts}",
-  "record.passLocked": "Check all steps to enable Pass",
+  "record.passLocked": "Mark all steps OK to enable Pass",
 
   "reset.confirm": "This will erase all records (status and actual results) for this test. Continue?",
 
