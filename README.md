@@ -57,7 +57,7 @@ i18n/en.js           英語辞書
       "steps": [
         { "no": 1, "action": "ログイン画面を開く", "expected": "入力欄が表示される" },
         { "no": 2, "action": "メール「{{email}}」を入力", "expected": "入力値が反映される" },
-        { "no": 3, "action": "パスワード「{{password}}」でログイン", "expected": "{{result}}" }
+        { "no": 3, "action": "パスワード「{{password}}」でログイン", "expected": "ログイン処理が実行される" }
       ]
     }
   ]
